@@ -19,6 +19,7 @@ export const AccountingTab: React.FC = () => {
   const {
     documents,
     supplierOrders,
+    suppliers,
     cashTransactions,
     clients,
     theme,
@@ -106,22 +107,26 @@ export const AccountingTab: React.FC = () => {
     const headers = [
       'Date',
       'N° Commande',
-      'Fournisseur ID',
+      'Fournisseur',
       'Total HT (€)',
       'TVA Déductible (€)',
       'Total TTC (€)',
       'Statut',
     ];
 
-    const rows = supplierOrders.map((ord) => [
-      ord.orderDate,
-      ord.orderNumber,
-      ord.supplierId,
-      ord.totalHT.toFixed(2),
-      ord.totalTVA.toFixed(2),
-      ord.totalTTC.toFixed(2),
-      ord.status,
-    ].join(';'));
+    const rows = supplierOrders.map((ord) => {
+      const supplier = suppliers.find((s) => s.id === ord.supplierId);
+      const supplierName = supplier ? supplier.name : ord.supplierId;
+      return [
+        ord.orderDate,
+        ord.orderNumber,
+        `"${supplierName}"`,
+        ord.totalHT.toFixed(2),
+        ord.totalTVA.toFixed(2),
+        ord.totalTTC.toFixed(2),
+        ord.status,
+      ].join(';');
+    });
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...rows].join('\n');
     const encodedUri = encodeURI(csvContent);

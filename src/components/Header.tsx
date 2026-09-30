@@ -9,6 +9,7 @@ import {
   Calendar,
   DollarSign,
   Car,
+  ShieldCheck,
 } from 'lucide-react';
 import { formatDateFull } from '../utils/dateUtils';
 
@@ -19,6 +20,7 @@ export const Header: React.FC = () => {
     theme,
     setIsThemeModalOpen,
     setIsGarageModalOpen,
+    setIsBackupModalOpen,
     setActiveTab,
   } = useApp();
 
@@ -130,6 +132,17 @@ export const Header: React.FC = () => {
         >
           <Building2 className="w-3.5 h-3.5 text-sky-600" />
           <span className="hidden md:inline">Logo & Garage</span>
+        </button>
+
+        {/* Sauvegardes & Diagnostic Button */}
+        <button
+          onClick={() => setIsBackupModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50/90 hover:bg-emerald-100 text-xs font-semibold text-emerald-800 transition-colors shadow-2xs"
+          title="Sauvegardes complètes, restauration et effacement des bugs"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="hidden lg:inline">Sauvegardes & Diagnostic</span>
+          <span className="lg:hidden">Sauvegardes</span>
         </button>
 
         {/* Quick New Document Shortcut */}

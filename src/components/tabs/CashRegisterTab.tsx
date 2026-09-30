@@ -48,6 +48,7 @@ export const CashRegisterTab: React.FC = () => {
     addDayClose,
     documents,
     updateDocument,
+    clients,
     garage,
     theme,
   } = useApp();
@@ -210,6 +211,10 @@ export const CashRegisterTab: React.FC = () => {
       }
       label = `Règlement Facture ${invoice.referenceNumber}`;
       docId = invoice.id;
+      const client = clients.find((c) => c.id === invoice.clientId);
+      if (client) {
+        clientName = client.type === 'professionnel' ? client.companyName : `${client.firstName} ${client.lastName}`;
+      }
       // Mark invoice as paid
       updateDocument(invoice.id, {
         status: 'paye',
@@ -252,7 +257,7 @@ export const CashRegisterTab: React.FC = () => {
 
     const newClose = addDayClose({
       date: todayDateStr,
-      openingBalance: 250.0,
+      openingBalance: cashSettings.initialOpeningBalance || 250.0,
       totalCash: totalCashIn,
       totalCard: totalCardToday,
       totalCheque: totalChequeToday,

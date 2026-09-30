@@ -14,6 +14,8 @@ import {
   CashRegisterSettings,
   Mechanic,
   WorkshopBay,
+  DataSnapshot,
+  DataRepairReport,
 } from '../types';
 import { storageService, recalculateDocumentTotals } from '../services/storage';
 
@@ -33,6 +35,20 @@ interface AppContextType {
   setIsThemeModalOpen: (open: boolean) => void;
   isGarageModalOpen: boolean;
   setIsGarageModalOpen: (open: boolean) => void;
+  isBackupModalOpen: boolean;
+  setIsBackupModalOpen: (open: boolean) => void;
+
+  // Backups, Snapshots & Repair
+  snapshots: DataSnapshot[];
+  createSnapshot: (name?: string) => DataSnapshot;
+  restoreSnapshot: (id: string) => boolean;
+  deleteSnapshot: (id: string) => void;
+  exportBackup: () => string;
+  downloadBackupFile: () => void;
+  importBackup: (jsonString: string) => boolean;
+  repairData: () => DataRepairReport;
+  lastRepairReport: DataRepairReport | null;
+  refreshAllFromStorage: () => void;
 
   // Print Document preview
   viewingDocument: GarageDocument | null;
@@ -117,7 +133,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [isGarageModalOpen, setIsGarageModalOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [viewingDocument, setViewingDocument] = useState<GarageDocument | null>(null);
+
+  const [snapshots, setSnapshots] = useState<DataSnapshot[]>(() => storageService.getSnapshots());
+  const [lastRepairReport, setLastRepairReport] = useState<DataRepairReport | null>(() => storageService.getLastRepairReport());
 
   const [clients, setClients] = useState<Client[]>(() => storageService.getClients());
   const [vehicles, setVehicles] = useState<Vehicle[]>(() => storageService.getVehicles());
@@ -555,8 +575,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     storageService.saveCatalogItems(updated);
   };
 
-  const resetAllData = () => {
-    storageService.resetAll();
+  const refreshAllFromStorage = () => {
     setTheme(storageService.getTheme());
     setGarage(storageService.getGarage());
     setClients(storageService.getClients());
@@ -571,6 +590,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCashSettings(storageService.getCashSettings());
     setMechanics(storageService.getMechanics());
     setWorkshopBays(storageService.getWorkshopBays());
+    setSnapshots(storageService.getSnapshots());
+    setLastRepairReport(storageService.getLastRepairReport());
+  };
+
+  const exportBackup = (): string => {
+    return storageService.exportBackup();
+  };
+
+  const downloadBackupFile = () => {
+    const jsonStr = storageService.exportBackup();
+    const dateStr = new Date().toISOString().split('T')[0];
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sauvegarde_autopro_garage_${dateStr}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const importBackup = (jsonString: string): boolean => {
+    const success = storageService.importBackup(jsonString);
+    if (success) {
+      refreshAllFromStorage();
+    }
+    return success;
+  };
+
+  const createSnapshot = (name?: string): DataSnapshot => {
+    const snap = storageService.createSnapshot(name);
+    setSnapshots(storageService.getSnapshots());
+    return snap;
+  };
+
+  const restoreSnapshot = (id: string): boolean => {
+    const success = storageService.restoreSnapshot(id);
+    if (success) {
+      refreshAllFromStorage();
+    }
+    return success;
+  };
+
+  const deleteSnapshot = (id: string) => {
+    storageService.deleteSnapshot(id);
+    setSnapshots(storageService.getSnapshots());
+  };
+
+  const repairData = (): DataRepairReport => {
+    const report = storageService.cleanAndRepairData();
+    refreshAllFromStorage();
+    return report;
+  };
+
+  const resetAllData = () => {
+    storageService.createSnapshot('Sauvegarde automatique avant réinitialisation');
+    storageService.resetAll();
+    refreshAllFromStorage();
   };
 
   return (
@@ -586,6 +664,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsThemeModalOpen,
         isGarageModalOpen,
         setIsGarageModalOpen,
+        isBackupModalOpen,
+        setIsBackupModalOpen,
+        snapshots,
+        createSnapshot,
+        restoreSnapshot,
+        deleteSnapshot,
+        exportBackup,
+        downloadBackupFile,
+        importBackup,
+        repairData,
+        lastRepairReport,
+        refreshAllFromStorage,
         viewingDocument,
         setViewingDocument,
         clients,

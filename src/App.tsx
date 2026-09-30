@@ -11,6 +11,7 @@ import { AccountingTab } from './components/tabs/AccountingTab';
 import { ThemeModal } from './components/ThemeModal';
 import { GarageSettingsModal } from './components/GarageSettingsModal';
 import { DocumentViewerModal } from './components/DocumentViewerModal';
+import { BackupRestoreModal } from './components/BackupRestoreModal';
 
 const AppContent: React.FC = () => {
   const { activeTab, theme } = useApp();
@@ -64,6 +65,7 @@ const AppContent: React.FC = () => {
       <ThemeModal />
       <GarageSettingsModal />
       <DocumentViewerModal />
+      <BackupRestoreModal />
     </div>
   );
 };

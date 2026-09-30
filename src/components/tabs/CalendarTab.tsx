@@ -944,9 +944,10 @@ export const CalendarTab: React.FC = () => {
                   <select
                     value={newClientId}
                     onChange={(e) => {
-                      setNewClientId(e.target.value);
-                      const firstVeh = vehicles.find((v) => v.clientId === e.target.value);
-                      if (firstVeh) setNewVehicleId(firstVeh.id);
+                      const cid = e.target.value;
+                      setNewClientId(cid);
+                      const firstVeh = vehicles.find((v) => v.clientId === cid);
+                      setNewVehicleId(firstVeh ? firstVeh.id : '');
                     }}
                     className="w-full border border-slate-300 rounded-lg p-2 text-xs"
                     required

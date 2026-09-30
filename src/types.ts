@@ -222,3 +222,24 @@ export interface CashRegisterSettings {
   enableLineDeletion: boolean; // Option suppression de ligne activée
   confirmBeforeDelete: boolean; // Demander confirmation avant suppression
 }
+
+export interface DataSnapshot {
+  id: string;
+  name: string;
+  timestamp: string;
+  counts: {
+    clients: number;
+    vehicles: number;
+    documents: number;
+    appointments: number;
+    cashTransactions: number;
+    supplierOrders: number;
+  };
+  payload: string; // Full JSON string
+}
+
+export interface DataRepairReport {
+  fixedCount: number;
+  details: string[];
+  timestamp: string;
+}

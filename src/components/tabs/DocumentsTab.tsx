@@ -506,9 +506,10 @@ export const DocumentsTab: React.FC = () => {
                   <select
                     value={newClientId}
                     onChange={(e) => {
-                      setNewClientId(e.target.value);
-                      const fv = vehicles.find((v) => v.clientId === e.target.value);
-                      if (fv) setNewVehicleId(fv.id);
+                      const cid = e.target.value;
+                      setNewClientId(cid);
+                      const fv = vehicles.find((v) => v.clientId === cid);
+                      setNewVehicleId(fv ? fv.id : '');
                     }}
                     className="w-full border border-slate-300 rounded-lg p-2 text-xs"
                     required
@@ -529,11 +530,15 @@ export const DocumentsTab: React.FC = () => {
                     className="w-full border border-slate-300 rounded-lg p-2 text-xs"
                     required
                   >
-                    {clientVehicles.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.licensePlate} — {v.brand} {v.model}
-                      </option>
-                    ))}
+                    {clientVehicles.length === 0 ? (
+                      <option value="">(Aucun véhicule enregistré pour ce client)</option>
+                    ) : (
+                      clientVehicles.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.licensePlate} — {v.brand} {v.model}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 

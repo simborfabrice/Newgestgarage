@@ -11,6 +11,8 @@ import {
   Building2,
   RotateCcw,
   Sparkles,
+  ShieldCheck,
+  HardDrive,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -21,6 +23,7 @@ export const Sidebar: React.FC = () => {
     theme,
     setIsThemeModalOpen,
     setIsGarageModalOpen,
+    setIsBackupModalOpen,
     resetAllData,
   } = useApp();
 
@@ -189,10 +192,24 @@ export const Sidebar: React.FC = () => {
           <span>Modifier Logo & Garage</span>
         </button>
 
+        {/* Sauvegardes, Snapshots & Réparation */}
+        <button
+          onClick={() => setIsBackupModalOpen(true)}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+            isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-white/10'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="flex-1 flex items-center justify-between">
+            <span>Sauvegardes & Données</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          </div>
+        </button>
+
         {/* Demo reset */}
         <button
           onClick={() => {
-            if (confirm('Réinitialiser toutes les données aux valeurs de démonstration ?')) {
+            if (confirm('Réinitialiser toutes les données aux valeurs de démonstration ? (Une sauvegarde automatique de vos données actuelles sera conservée).')) {
               resetAllData();
             }
           }}

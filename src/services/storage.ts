@@ -13,6 +13,8 @@ import {
   CashRegisterSettings,
   Mechanic,
   WorkshopBay,
+  DataSnapshot,
+  DataRepairReport,
 } from '../types';
 
 export const DEFAULT_CASH_SETTINGS: CashRegisterSettings = {
@@ -959,6 +961,8 @@ const KEYS = {
   CASH_SETTINGS: 'autopro_cash_settings_v1',
   MECHANICS: 'autopro_mechanics_v1',
   WORKSHOP_BAYS: 'autopro_workshop_bays_v1',
+  SNAPSHOTS: 'autopro_snapshots_v1',
+  LAST_REPAIR_REPORT: 'autopro_last_repair_v1',
 };
 
 // Generic storage accessors
@@ -1058,7 +1062,7 @@ export const storageService = {
     loadItem<WorkshopBay[]>(KEYS.WORKSHOP_BAYS, INITIAL_WORKSHOP_BAYS),
   saveWorkshopBays: (bays: WorkshopBay[]) => saveItem(KEYS.WORKSHOP_BAYS, bays),
 
-  // Reset to demo data
+  // Reset to clean verified demo data
   resetAll: () => {
     saveItem(KEYS.THEME, DEFAULT_THEME);
     saveItem(KEYS.GARAGE, DEFAULT_GARAGE);
@@ -1071,13 +1075,17 @@ export const storageService = {
     saveItem(KEYS.CASH_TRANSACTIONS, INITIAL_CASH_TRANSACTIONS);
     saveItem(KEYS.DAY_CLOSES, INITIAL_DAY_CLOSES);
     saveItem(KEYS.CATALOG_ITEMS, INITIAL_CATALOG_ITEMS);
+    saveItem(KEYS.CASH_SETTINGS, DEFAULT_CASH_SETTINGS);
     saveItem(KEYS.MECHANICS, INITIAL_MECHANICS);
     saveItem(KEYS.WORKSHOP_BAYS, INITIAL_WORKSHOP_BAYS);
   },
 
   // Export full backup
   exportBackup: () => {
-    return JSON.stringify({
+    const backupObj = {
+      app: 'AutoPro Garage',
+      version: '2.1.0',
+      exportedAt: new Date().toISOString(),
       theme: loadItem(KEYS.THEME, DEFAULT_THEME),
       garage: loadItem(KEYS.GARAGE, DEFAULT_GARAGE),
       clients: loadItem(KEYS.CLIENTS, INITIAL_CLIENTS),
@@ -1089,34 +1097,390 @@ export const storageService = {
       cashTransactions: loadItem(KEYS.CASH_TRANSACTIONS, INITIAL_CASH_TRANSACTIONS),
       dayCloses: loadItem(KEYS.DAY_CLOSES, INITIAL_DAY_CLOSES),
       catalogItems: loadItem(KEYS.CATALOG_ITEMS, INITIAL_CATALOG_ITEMS),
+      cashSettings: loadItem(KEYS.CASH_SETTINGS, DEFAULT_CASH_SETTINGS),
       mechanics: loadItem(KEYS.MECHANICS, INITIAL_MECHANICS),
       workshopBays: loadItem(KEYS.WORKSHOP_BAYS, INITIAL_WORKSHOP_BAYS),
-      exportedAt: new Date().toISOString(),
-    }, null, 2);
+    };
+    return JSON.stringify(backupObj, null, 2);
   },
 
-  // Import backup
-  importBackup: (jsonString: string) => {
+  // Import full backup
+  importBackup: (jsonString: string): boolean => {
     try {
       const data = JSON.parse(jsonString);
-      if (data.theme) saveItem(KEYS.THEME, data.theme);
-      if (data.garage) saveItem(KEYS.GARAGE, data.garage);
-      if (data.clients) saveItem(KEYS.CLIENTS, data.clients);
-      if (data.vehicles) saveItem(KEYS.VEHICLES, data.vehicles);
-      if (data.suppliers) saveItem(KEYS.SUPPLIERS, data.suppliers);
-      if (data.supplierOrders) saveItem(KEYS.SUPPLIER_ORDERS, data.supplierOrders);
-      if (data.appointments) saveItem(KEYS.APPOINTMENTS, data.appointments);
-      if (data.documents) saveItem(KEYS.DOCUMENTS, data.documents);
-      if (data.cashTransactions) saveItem(KEYS.CASH_TRANSACTIONS, data.cashTransactions);
-      if (data.dayCloses) saveItem(KEYS.DAY_CLOSES, data.dayCloses);
-      if (data.catalogItems) saveItem(KEYS.CATALOG_ITEMS, data.catalogItems);
-      if (data.mechanics) saveItem(KEYS.MECHANICS, data.mechanics);
-      if (data.workshopBays) saveItem(KEYS.WORKSHOP_BAYS, data.workshopBays);
+      if (!data || typeof data !== 'object') return false;
+
+      // Create a safety backup before overwriting
+      storageService.createSnapshot('Sauvegarde automatique avant restauration de fichier');
+
+      if (data.theme) saveItem(KEYS.THEME, { ...DEFAULT_THEME, ...data.theme });
+      if (data.garage) saveItem(KEYS.GARAGE, { ...DEFAULT_GARAGE, ...data.garage });
+      if (Array.isArray(data.clients)) saveItem(KEYS.CLIENTS, data.clients);
+      if (Array.isArray(data.vehicles)) saveItem(KEYS.VEHICLES, data.vehicles);
+      if (Array.isArray(data.suppliers)) saveItem(KEYS.SUPPLIERS, data.suppliers);
+      if (Array.isArray(data.supplierOrders)) saveItem(KEYS.SUPPLIER_ORDERS, data.supplierOrders);
+      if (Array.isArray(data.appointments)) saveItem(KEYS.APPOINTMENTS, data.appointments);
+      if (Array.isArray(data.documents)) saveItem(KEYS.DOCUMENTS, data.documents);
+      if (Array.isArray(data.cashTransactions)) saveItem(KEYS.CASH_TRANSACTIONS, data.cashTransactions);
+      if (Array.isArray(data.dayCloses)) saveItem(KEYS.DAY_CLOSES, data.dayCloses);
+      if (Array.isArray(data.catalogItems)) saveItem(KEYS.CATALOG_ITEMS, data.catalogItems);
+      if (data.cashSettings) saveItem(KEYS.CASH_SETTINGS, { ...DEFAULT_CASH_SETTINGS, ...data.cashSettings });
+      if (Array.isArray(data.mechanics)) saveItem(KEYS.MECHANICS, data.mechanics);
+      if (Array.isArray(data.workshopBays)) saveItem(KEYS.WORKSHOP_BAYS, data.workshopBays);
+
       return true;
     } catch (e) {
       console.error('Failed to import backup:', e);
       return false;
     }
+  },
+
+  // Snapshots (Points de restauration locaux instantanés)
+  getSnapshots: (): DataSnapshot[] => {
+    return loadItem<DataSnapshot[]>(KEYS.SNAPSHOTS, []);
+  },
+
+  createSnapshot: (name?: string): DataSnapshot => {
+    const snapshots = storageService.getSnapshots();
+    const payload = storageService.exportBackup();
+    const parsed = JSON.parse(payload);
+
+    const newSnapshot: DataSnapshot = {
+      id: `snap-${Date.now()}`,
+      name: name || `Point de sauvegarde du ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+      timestamp: new Date().toISOString(),
+      counts: {
+        clients: parsed.clients?.length || 0,
+        vehicles: parsed.vehicles?.length || 0,
+        documents: parsed.documents?.length || 0,
+        appointments: parsed.appointments?.length || 0,
+        cashTransactions: parsed.cashTransactions?.length || 0,
+        supplierOrders: parsed.supplierOrders?.length || 0,
+      },
+      payload,
+    };
+
+    // Keep last 15 snapshots max to avoid filling localStorage
+    const updated = [newSnapshot, ...snapshots.slice(0, 14)];
+    saveItem(KEYS.SNAPSHOTS, updated);
+    return newSnapshot;
+  },
+
+  restoreSnapshot: (id: string): boolean => {
+    const snapshots = storageService.getSnapshots();
+    const target = snapshots.find((s) => s.id === id);
+    if (!target) return false;
+
+    // Save current as pre-restore snapshot
+    storageService.createSnapshot('Sauvegarde avant restauration de snapshot');
+    return storageService.importBackup(target.payload);
+  },
+
+  deleteSnapshot: (id: string) => {
+    const snapshots = storageService.getSnapshots();
+    const updated = snapshots.filter((s) => s.id !== id);
+    saveItem(KEYS.SNAPSHOTS, updated);
+  },
+
+  getLastRepairReport: (): DataRepairReport | null => {
+    return loadItem<DataRepairReport | null>(KEYS.LAST_REPAIR_REPORT, null);
+  },
+
+  // Audit and Repair Engine ("Effacer les bugs")
+  cleanAndRepairData: (): DataRepairReport => {
+    let fixedCount = 0;
+    const details: string[] = [];
+
+    // 1. Clients
+    let clients = storageService.getClients();
+    if (!Array.isArray(clients) || clients.length === 0) {
+      clients = INITIAL_CLIENTS;
+      fixedCount++;
+      details.push('Répertoire clients réinitialisé avec les données de base certifiées.');
+    }
+    const clientIds = new Set(clients.map((c) => c.id));
+
+    // 2. Vehicles
+    let vehicles = storageService.getVehicles();
+    if (!Array.isArray(vehicles) || vehicles.length === 0) {
+      vehicles = INITIAL_VEHICLES;
+      fixedCount++;
+      details.push('Parc véhicules restauré avec données de référence certifiées.');
+    } else {
+      let orphanVehiclesFixed = 0;
+      vehicles = vehicles.map((v) => {
+        let changed = false;
+        let cId = v.clientId;
+        if (!clientIds.has(cId)) {
+          cId = clients[0]?.id || 'cli-1';
+          orphanVehiclesFixed++;
+          changed = true;
+        }
+        const cleanPlate = (v.licensePlate || 'XX-000-XX').toUpperCase().trim();
+        if (cleanPlate !== v.licensePlate) changed = true;
+        const cleanMileage = Math.max(0, Number(v.mileage) || 0);
+        if (cleanMileage !== v.mileage) changed = true;
+
+        if (changed) fixedCount++;
+        return {
+          ...v,
+          clientId: cId,
+          licensePlate: cleanPlate,
+          mileage: cleanMileage,
+        };
+      });
+      if (orphanVehiclesFixed > 0) {
+        details.push(`${orphanVehiclesFixed} véhicule(s) orphelin(s) rattaché(s) à un client valide.`);
+      }
+    }
+    const vehicleIds = new Set(vehicles.map((v) => v.id));
+
+    // 3. Mechanics & Workshop Bays
+    let mechanics = storageService.getMechanics();
+    if (!Array.isArray(mechanics) || mechanics.length === 0) {
+      mechanics = INITIAL_MECHANICS;
+      fixedCount++;
+      details.push('Équipe de mécaniciens réinitialisée avec les profils d’atelier.');
+    }
+    const defaultMechanicName = mechanics[0]?.name || 'Fabrice';
+
+    let workshopBays = storageService.getWorkshopBays();
+    if (!Array.isArray(workshopBays) || workshopBays.length === 0) {
+      workshopBays = INITIAL_WORKSHOP_BAYS;
+      fixedCount++;
+      details.push('Postes d’atelier (ponts et baies) réalignés.');
+    }
+    const defaultBayName = workshopBays[0]?.name || 'Pont 1';
+
+    // 4. Appointments
+    let appointments = storageService.getAppointments();
+    if (!Array.isArray(appointments)) {
+      appointments = INITIAL_APPOINTMENTS;
+      fixedCount++;
+      details.push('Agenda des rendez-vous rétabli.');
+    } else {
+      let aptRepairs = 0;
+      appointments = appointments.map((apt) => {
+        let changed = false;
+        let cId = apt.clientId;
+        let vId = apt.vehicleId;
+
+        if (!clientIds.has(cId)) {
+          cId = clients[0]?.id || 'cli-1';
+          changed = true;
+        }
+        if (!vehicleIds.has(vId)) {
+          // pick a vehicle belonging to this client or first vehicle
+          const matchVeh = vehicles.find((v) => v.clientId === cId) || vehicles[0];
+          vId = matchVeh?.id || 'veh-1';
+          changed = true;
+        }
+
+        const validMechanic = mechanics.some((m) => m.name === apt.mechanic) ? apt.mechanic : defaultMechanicName;
+        if (validMechanic !== apt.mechanic) changed = true;
+
+        const validBay = workshopBays.some((b) => b.name === apt.bay) ? apt.bay : defaultBayName;
+        if (validBay !== apt.bay) changed = true;
+
+        const validDuration = Math.max(15, Number(apt.durationMinutes) || 60);
+        if (validDuration !== apt.durationMinutes) changed = true;
+
+        if (changed) {
+          aptRepairs++;
+          fixedCount++;
+        }
+
+        return {
+          ...apt,
+          clientId: cId,
+          vehicleId: vId,
+          mechanic: validMechanic,
+          bay: validBay,
+          durationMinutes: validDuration,
+        };
+      });
+      if (aptRepairs > 0) {
+        details.push(`${aptRepairs} rendez-vous d’atelier vérifiés et synchronisés (clients, véhicules, ponts).`);
+      }
+    }
+
+    // 5. Documents (Devis, Bons de commande, Factures)
+    let documents = storageService.getDocuments();
+    if (!Array.isArray(documents)) {
+      documents = INITIAL_DOCUMENTS;
+      fixedCount++;
+      details.push('Documents de facturation restaurés.');
+    } else {
+      let docRepairs = 0;
+      documents = documents.map((doc) => {
+        let changed = false;
+        let cId = doc.clientId;
+        let vId = doc.vehicleId;
+
+        if (!clientIds.has(cId)) {
+          cId = clients[0]?.id || 'cli-1';
+          changed = true;
+        }
+        if (!vehicleIds.has(vId)) {
+          const matchVeh = vehicles.find((v) => v.clientId === cId) || vehicles[0];
+          vId = matchVeh?.id || 'veh-1';
+          changed = true;
+        }
+
+        // Recalculate financial totals
+        const cleanItems = Array.isArray(doc.items) && doc.items.length > 0 ? doc.items : [
+          {
+            id: `it-${Date.now()}`,
+            type: 'main_oeuvre' as const,
+            reference: 'MO-T1',
+            description: 'Main d’œuvre atelier',
+            quantity: 1,
+            unitPriceHT: 65,
+            discountPercent: 0,
+            tvaRate: 20,
+          },
+        ];
+        if (cleanItems !== doc.items) changed = true;
+
+        const computed = recalculateDocumentTotals(cleanItems);
+        if (
+          doc.totalHT !== computed.totalHT ||
+          doc.totalTVA !== computed.totalTVA ||
+          doc.totalTTC !== computed.totalTTC ||
+          isNaN(doc.totalHT) ||
+          isNaN(doc.totalTTC)
+        ) {
+          changed = true;
+        }
+
+        // Status validation
+        let cleanStatus = doc.status;
+        const amountPaid = Number(doc.amountPaid) || 0;
+        if (amountPaid >= computed.totalTTC && doc.status !== 'paye') {
+          cleanStatus = 'paye';
+          changed = true;
+        } else if (amountPaid > 0 && amountPaid < computed.totalTTC && doc.status === 'brouillon') {
+          cleanStatus = 'partiellement_paye';
+          changed = true;
+        }
+
+        if (changed) {
+          docRepairs++;
+          fixedCount++;
+        }
+
+        return {
+          ...doc,
+          clientId: cId,
+          vehicleId: vId,
+          items: cleanItems,
+          ...computed,
+          status: cleanStatus,
+          amountPaid,
+        };
+      });
+      if (docRepairs > 0) {
+        details.push(`${docRepairs} devis et factures contrôlés : totaux HT/TVA/TTC recalculés au centime.`);
+      }
+    }
+
+    // 6. Cash transactions
+    let cashTransactions = storageService.getCashTransactions();
+    if (!Array.isArray(cashTransactions)) {
+      cashTransactions = INITIAL_CASH_TRANSACTIONS;
+      fixedCount++;
+      details.push('Journal de caisse rétabli.');
+    } else {
+      let txRepairs = 0;
+      cashTransactions = cashTransactions.map((tx) => {
+        let changed = false;
+        const cleanAmount = Math.max(0, Number(tx.amount) || 0);
+        if (cleanAmount !== tx.amount) changed = true;
+
+        // Auto attach client name if linked to a document
+        let cleanClientName = tx.clientName;
+        if (tx.documentId && !cleanClientName) {
+          const doc = documents.find((d) => d.id === tx.documentId);
+          if (doc) {
+            const client = clients.find((c) => c.id === doc.clientId);
+            if (client) {
+              cleanClientName = client.type === 'professionnel' ? client.companyName : `${client.firstName} ${client.lastName}`;
+              changed = true;
+            }
+          }
+        }
+
+        if (changed) {
+          txRepairs++;
+          fixedCount++;
+        }
+
+        return {
+          ...tx,
+          amount: cleanAmount,
+          clientName: cleanClientName,
+        };
+      });
+      if (txRepairs > 0) {
+        details.push(`${txRepairs} opération(s) de caisse validée(s) et enrichie(s).`);
+      }
+    }
+
+    // 7. Cash Settings
+    const cashSettings = storageService.getCashSettings();
+    let csChanged = false;
+    if (isNaN(cashSettings.initialOpeningBalance) || cashSettings.initialOpeningBalance < 0) {
+      cashSettings.initialOpeningBalance = 250;
+      csChanged = true;
+    }
+    if (!cashSettings.defaultCashier) {
+      cashSettings.defaultCashier = 'Fabrice (Gérant)';
+      csChanged = true;
+    }
+    if (csChanged) {
+      fixedCount++;
+      storageService.saveCashSettings(cashSettings);
+      details.push('Paramètres de caisse : fond initial et caissier sécurisés.');
+    }
+
+    // 8. Garage settings
+    const garage = storageService.getGarage();
+    let gChanged = false;
+    if (!garage.logoSize || garage.logoSize < 50 || garage.logoSize > 320) {
+      garage.logoSize = 140;
+      gChanged = true;
+    }
+    if (gChanged) {
+      fixedCount++;
+      storageService.saveGarage(garage);
+      details.push('Paramètres d’identité du garage normalisés.');
+    }
+
+    // Save all repaired data
+    storageService.saveClients(clients);
+    storageService.saveVehicles(vehicles);
+    storageService.saveAppointments(appointments);
+    storageService.saveDocuments(documents);
+    storageService.saveCashTransactions(cashTransactions);
+    storageService.saveMechanics(mechanics);
+    storageService.saveWorkshopBays(workshopBays);
+
+    if (fixedCount === 0) {
+      details.push('Aucun bug détecté : toutes les tables, totaux et liaisons étaient déjà 100% intègres.');
+    }
+
+    const report: DataRepairReport = {
+      fixedCount,
+      details,
+      timestamp: new Date().toISOString(),
+    };
+
+    saveItem(KEYS.LAST_REPAIR_REPORT, report);
+
+    // Save a clean snapshot automatically
+    storageService.createSnapshot(`Point certifié sans bug (${fixedCount} correction(s))`);
+
+    return report;
   },
 };
 
