@@ -1,0 +1,8 @@
+{
+  "name": "Remix AutoPro Garage - Gestion d\u0027Atelier \u0026 Facturation",
+  "description": "Logiciel complet de gestion de garage automobile : agenda des rendez-vous atelier, clients et véhicules, fournisseurs, devis, bons de commande, factures, caisse journalière et comptabilité avec personnalisation intégrale des couleurs et logo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
