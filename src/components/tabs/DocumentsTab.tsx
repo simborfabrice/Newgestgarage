@@ -18,10 +18,11 @@ import {
   Sparkles,
   BookmarkPlus,
   Wrench,
+  Calendar,
 } from 'lucide-react';
 import { CatalogItem, DocumentItem, DocumentType, GarageDocument } from '../../types';
 import { CatalogShortcutsModal } from '../CatalogShortcutsModal';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate, getTodayDateStr, addDays } from '../../utils/dateUtils';
 
 export const DocumentsTab: React.FC = () => {
   const {
@@ -31,6 +32,7 @@ export const DocumentsTab: React.FC = () => {
     deleteDocument,
     convertQuoteToOrder,
     convertOrderToInvoice,
+    setAllDocumentsToTodayDate,
     setViewingDocument,
     clients,
     vehicles,
@@ -51,11 +53,14 @@ export const DocumentsTab: React.FC = () => {
   const [newDocType, setNewDocType] = useState<DocumentType>('devis');
   const [newClientId, setNewClientId] = useState(clients[0]?.id || '');
   const [newVehicleId, setNewVehicleId] = useState(vehicles[0]?.id || '');
-  const [newDate, setNewDate] = useState('2026-09-30');
-  const [newValidityDate, setNewValidityDate] = useState('2026-10-30');
-  const [newDueDate, setNewDueDate] = useState('2026-10-30');
+  const todayStr = getTodayDateStr();
+  const in30DaysStr = addDays(todayStr, 30);
+  const [newDate, setNewDate] = useState(todayStr);
+  const [newValidityDate, setNewValidityDate] = useState(in30DaysStr);
+  const [newDueDate, setNewDueDate] = useState(in30DaysStr);
   const [newNotes, setNewNotes] = useState('');
   const [newMileage, setNewMileage] = useState<number>(100000);
+  const [dateUpdateFeedback, setDateUpdateFeedback] = useState<string | null>(null);
 
   const [items, setItems] = useState<Omit<DocumentItem, 'id'>[]>([
     {
@@ -215,6 +220,15 @@ export const DocumentsTab: React.FC = () => {
     }
   };
 
+  const handleSetAllToToday = () => {
+    const today = getTodayDateStr();
+    setAllDocumentsToTodayDate(today);
+    setDateUpdateFeedback(
+      `La date du jour (${formatDate(today)}) a été appliquée avec succès à l'ensemble de vos ${documents.length} devis, bons de commande et factures !`
+    );
+    setTimeout(() => setDateUpdateFeedback(null), 5000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -230,6 +244,16 @@ export const DocumentsTab: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Action: Apply today's date to all documents */}
+          <button
+            onClick={handleSetAllToToday}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors shadow-2xs"
+            title={`Mettre la date de tous les documents (${documents.length}) au ${formatDate(todayStr)}`}
+          >
+            <Calendar className="w-4 h-4 text-emerald-600" />
+            <span>Date du jour ({formatDate(todayStr)}) sur tous</span>
+          </button>
+
           <button
             onClick={() => setIsCatalogModalOpen(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-300 rounded-lg transition-colors shadow-2xs"
@@ -252,6 +276,21 @@ export const DocumentsTab: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {dateUpdateFeedback && (
+        <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-2xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{dateUpdateFeedback}</span>
+          </div>
+          <button
+            onClick={() => setDateUpdateFeedback(null)}
+            className="text-emerald-700 hover:text-emerald-900 text-xs p-1"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Tabs Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
@@ -543,11 +582,31 @@ export const DocumentsTab: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="font-semibold text-slate-700 block mb-1">Date d'émission *</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-slate-700 block">Date d'émission *</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const t = getTodayDateStr();
+                        setNewDate(t);
+                        setNewValidityDate(addDays(t, 30));
+                        setNewDueDate(addDays(t, 30));
+                      }}
+                      className="text-[10px] text-sky-600 hover:text-sky-800 font-semibold flex items-center gap-1"
+                    >
+                      <Calendar className="w-3 h-3" />
+                      <span>Aujourd'hui</span>
+                    </button>
+                  </div>
                   <input
                     type="date"
                     value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
+                    onChange={(e) => {
+                      const d = e.target.value;
+                      setNewDate(d);
+                      setNewValidityDate(addDays(d, 30));
+                      setNewDueDate(addDays(d, 30));
+                    }}
                     className="w-full border border-slate-300 rounded-lg p-2 text-xs"
                     required
                   />

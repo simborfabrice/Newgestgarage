@@ -16,6 +16,7 @@ import {
   DataSnapshot,
   DataRepairReport,
 } from '../types';
+import { getTodayDateStr, addDays } from '../utils/dateUtils';
 
 export const DEFAULT_CASH_SETTINGS: CashRegisterSettings = {
   initialOpeningBalance: 250.0,
@@ -470,13 +471,16 @@ export const INITIAL_WORKSHOP_BAYS: WorkshopBay[] = [
   { id: 'bay-4', name: 'Atelier Général', description: 'Entretien rapide & Préparation', defaultMechanic: 'Fabrice', color: '#10b981', active: true },
 ];
 
+const TODAY_DOC_DATE = getTodayDateStr();
+const TODAY_DOC_DUE = addDays(TODAY_DOC_DATE, 30);
+
 const INITIAL_DOCUMENTS: GarageDocument[] = [
   {
     id: 'doc-1',
     type: 'facture',
     referenceNumber: 'FAC-2026-0089',
-    date: '2026-09-24',
-    dueDate: '2026-10-24',
+    date: TODAY_DOC_DATE,
+    dueDate: TODAY_DOC_DUE,
     clientId: 'cli-1',
     vehicleId: 'veh-1',
     status: 'paye',
@@ -516,7 +520,7 @@ const INITIAL_DOCUMENTS: GarageDocument[] = [
     id: 'doc-2',
     type: 'bon_commande',
     referenceNumber: 'BC-2026-0034',
-    date: '2026-09-29',
+    date: TODAY_DOC_DATE,
     clientId: 'cli-1',
     vehicleId: 'veh-1',
     status: 'valide',
@@ -569,15 +573,15 @@ const INITIAL_DOCUMENTS: GarageDocument[] = [
     totalTTC: 339.6,
     amountPaid: 100.0,
     paymentMethod: 'especes',
-    notes: 'Acompte de 100 € versé à la commande. Travaux prévus ce 30/09.',
+    notes: 'Acompte de 100 € versé à la commande. Travaux prévus ce jour.',
     mileageAtService: 124500,
   },
   {
     id: 'doc-3',
     type: 'devis',
     referenceNumber: 'DEV-2026-0052',
-    date: '2026-09-28',
-    validityDate: '2026-10-28',
+    date: TODAY_DOC_DATE,
+    validityDate: TODAY_DOC_DUE,
     clientId: 'cli-2',
     vehicleId: 'veh-2',
     status: 'envoye',
@@ -636,8 +640,8 @@ const INITIAL_DOCUMENTS: GarageDocument[] = [
     id: 'doc-4',
     type: 'facture',
     referenceNumber: 'FAC-2026-0090',
-    date: '2026-09-26',
-    dueDate: '2026-10-10',
+    date: TODAY_DOC_DATE,
+    dueDate: TODAY_DOC_DUE,
     clientId: 'cli-4',
     vehicleId: 'veh-4',
     status: 'paye',
@@ -697,8 +701,8 @@ const INITIAL_DOCUMENTS: GarageDocument[] = [
     id: 'doc-5',
     type: 'facture',
     referenceNumber: 'FAC-2026-0091',
-    date: '2026-09-28',
-    dueDate: '2026-10-15',
+    date: TODAY_DOC_DATE,
+    dueDate: TODAY_DOC_DUE,
     clientId: 'cli-2',
     vehicleId: 'veh-5',
     status: 'partiellement_paye',
@@ -1023,6 +1027,20 @@ export const storageService = {
   getDocuments: (): GarageDocument[] =>
     loadItem<GarageDocument[]>(KEYS.DOCUMENTS, INITIAL_DOCUMENTS),
   saveDocuments: (docs: GarageDocument[]) => saveItem(KEYS.DOCUMENTS, docs),
+
+  setAllDocumentsToToday: (targetDate?: string): GarageDocument[] => {
+    const today = targetDate || getTodayDateStr();
+    const nextMonth = addDays(today, 30);
+    const docs = storageService.getDocuments();
+    const updated = docs.map((doc) => ({
+      ...doc,
+      date: today,
+      validityDate: doc.type === 'devis' ? nextMonth : doc.validityDate ? nextMonth : undefined,
+      dueDate: doc.type === 'facture' ? nextMonth : doc.dueDate ? nextMonth : undefined,
+    }));
+    storageService.saveDocuments(updated);
+    return updated;
+  },
 
   getCashTransactions: (): CashTransaction[] =>
     loadItem<CashTransaction[]>(KEYS.CASH_TRANSACTIONS, INITIAL_CASH_TRANSACTIONS),

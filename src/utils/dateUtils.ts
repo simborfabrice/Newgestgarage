@@ -90,3 +90,27 @@ export function formatDateTime(input?: string | Date | null): string {
   const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   return `${dateStr} à ${timeStr}`;
 }
+
+/**
+ * Retourne la date du jour au format ISO YYYY-MM-DD (ex: 2026-10-01)
+ */
+export function getTodayDateStr(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Ajoute un nombre de jours à une date au format YYYY-MM-DD
+ */
+export function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  const nextY = date.getFullYear();
+  const nextM = String(date.getMonth() + 1).padStart(2, '0');
+  const nextD = String(date.getDate()).padStart(2, '0');
+  return `${nextY}-${nextM}-${nextD}`;
+}

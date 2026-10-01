@@ -1,8 +1,8 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Printer, CheckCircle, Clock, AlertTriangle, FileText, ArrowRight } from 'lucide-react';
+import { X, Printer, CheckCircle, Clock, AlertTriangle, FileText, ArrowRight, Calendar } from 'lucide-react';
 import { GarageDocument } from '../types';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getTodayDateStr, addDays } from '../utils/dateUtils';
 
 export const DocumentViewerModal: React.FC = () => {
   const {
@@ -13,6 +13,7 @@ export const DocumentViewerModal: React.FC = () => {
     theme,
     clients,
     vehicles,
+    updateDocument,
     convertQuoteToOrder,
     convertOrderToInvoice,
     setActiveTab,
@@ -103,6 +104,48 @@ export const DocumentViewerModal: React.FC = () => {
                 <span>Encaisser en Caisse</span>
               </button>
             )}
+
+            {/* Date du document avec bouton Date du Jour */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-lg border border-slate-300 text-xs shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-slate-600 font-medium text-[11px] hidden sm:inline">Date :</span>
+              <input
+                type="date"
+                value={doc.date}
+                onChange={(e) => {
+                  const newD = e.target.value;
+                  const newDue = addDays(newD, 30);
+                  const updatedDoc = {
+                    ...doc,
+                    date: newD,
+                    dueDate: doc.dueDate ? newDue : undefined,
+                    validityDate: doc.validityDate ? newDue : undefined,
+                  };
+                  updateDocument(doc.id, updatedDoc);
+                  setViewingDocument(updatedDoc);
+                }}
+                className="text-xs font-semibold text-slate-800 bg-transparent focus:outline-hidden cursor-pointer"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const today = getTodayDateStr();
+                  const newDue = addDays(today, 30);
+                  const updatedDoc = {
+                    ...doc,
+                    date: today,
+                    dueDate: doc.dueDate ? newDue : undefined,
+                    validityDate: doc.validityDate ? newDue : undefined,
+                  };
+                  updateDocument(doc.id, updatedDoc);
+                  setViewingDocument(updatedDoc);
+                }}
+                className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[10px] rounded border border-emerald-200 transition-colors ml-0.5"
+                title="Appliquer la date du jour à ce document"
+              >
+                Aujourd'hui
+              </button>
+            </div>
 
             {/* Redimensionnement direct du logo sur le document */}
             <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-lg border border-slate-200 text-xs">

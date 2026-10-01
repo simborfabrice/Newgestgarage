@@ -18,6 +18,7 @@ import {
   DataRepairReport,
 } from '../types';
 import { storageService, recalculateDocumentTotals } from '../services/storage';
+import { getTodayDateStr } from '../utils/dateUtils';
 
 interface AppContextType {
   // Theme & Garage
@@ -100,6 +101,7 @@ interface AppContextType {
   deleteDocument: (id: string) => void;
   convertQuoteToOrder: (quoteId: string) => GarageDocument | null;
   convertOrderToInvoice: (orderId: string) => GarageDocument | null;
+  setAllDocumentsToTodayDate: (targetDate?: string) => void;
 
   // Catalog Shortcuts & Prestations
   catalogItems: CatalogItem[];
@@ -473,6 +475,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newInvoice;
   };
 
+  const setAllDocumentsToTodayDate = (targetDate?: string) => {
+    const updated = storageService.setAllDocumentsToToday(targetDate);
+    setDocuments(updated);
+    if (viewingDocument) {
+      const refreshed = updated.find((d) => d.id === viewingDocument.id);
+      if (refreshed) setViewingDocument(refreshed);
+    }
+  };
+
+  // Synchronise tous les documents sur la date du jour si des dates antérieures existent
+  useEffect(() => {
+    const today = getTodayDateStr();
+    const hasPastDocuments = documents.some((d) => d.date < today);
+    if (hasPastDocuments) {
+      const updated = storageService.setAllDocumentsToToday(today);
+      setDocuments(updated);
+    }
+  }, []);
+
   // Cash operations
   const addCashTransaction = (data: Omit<CashTransaction, 'id' | 'date'>): CashTransaction => {
     const newTx: CashTransaction = {
@@ -712,6 +733,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteDocument,
         convertQuoteToOrder,
         convertOrderToInvoice,
+        setAllDocumentsToTodayDate,
         catalogItems,
         addCatalogItem,
         updateCatalogItem,
