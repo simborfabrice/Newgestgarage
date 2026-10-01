@@ -31,7 +31,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { CashTransaction, CashDayClose } from '../../types';
-import { formatDate, formatDateLong, formatDateTime, formatDateFull } from '../../utils/dateUtils';
+import { formatDate, formatDateLong, formatDateTime, formatDateFull, getTodayDateStr } from '../../utils/dateUtils';
 
 export const CashRegisterTab: React.FC = () => {
   const {
@@ -118,7 +118,7 @@ export const CashRegisterTab: React.FC = () => {
   );
 
   // Today's transactions
-  const todayDateStr = '2026-09-30';
+  const todayDateStr = getTodayDateStr();
   const todayTransactions = cashTransactions.filter((tx) =>
     tx.date.startsWith(todayDateStr)
   );
@@ -510,7 +510,7 @@ export const CashRegisterTab: React.FC = () => {
           <p className="text-2xl font-black tabular-nums">
             {totalSalesTTC.toFixed(2)} €
           </p>
-          <span className="text-[10px] opacity-75 block">30 Septembre 2026</span>
+          <span className="text-[10px] opacity-75 block capitalize">{formatDateLong(todayDateStr)}</span>
         </div>
       </div>
 

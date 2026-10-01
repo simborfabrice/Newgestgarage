@@ -26,7 +26,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { Appointment } from '../../types';
-import { formatDate, formatDateLong, formatDateFull } from '../../utils/dateUtils';
+import { formatDate, formatDateLong, formatDateFull, getTodayDateStr, addDays } from '../../utils/dateUtils';
 import { WorkshopConfigModal } from '../WorkshopConfigModal';
 
 export const CalendarTab: React.FC = () => {
@@ -48,12 +48,14 @@ export const CalendarTab: React.FC = () => {
   // Active view: 'grid31' (monthly table grid) | 'table31' (31-day rows table) | 'dayDetail' (selected day list)
   const [calendarView, setCalendarView] = useState<'grid31' | 'table31' | 'dayDetail'>('grid31');
 
-  // Month navigation: year and month (0-indexed: 8 = Septembre 2026, 9 = Octobre 2026)
-  const [currentYear, setCurrentYear] = useState<number>(2026);
-  const [currentMonth, setCurrentMonth] = useState<number>(8); // 8 = Septembre
+  // Month navigation: dynamically initialize to current year and current month (0-indexed)
+  const todayObj = new Date();
+  const todayStr = getTodayDateStr();
+  const [currentYear, setCurrentYear] = useState<number>(todayObj.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState<number>(todayObj.getMonth());
 
-  // Selected day for dayDetail view
-  const [selectedDayDate, setSelectedDayDate] = useState<string>('2026-09-30');
+  // Selected day for dayDetail view - opens directly on today's date
+  const [selectedDayDate, setSelectedDayDate] = useState<string>(todayStr);
 
   // Filters
   const [mechanicFilter, setMechanicFilter] = useState('all');
@@ -69,10 +71,10 @@ export const CalendarTab: React.FC = () => {
   // Modal for new appointment
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // New appointment form state
+  // New appointment form state - defaults to today
   const [newClientId, setNewClientId] = useState(clients[0]?.id || '');
   const [newVehicleId, setNewVehicleId] = useState(vehicles[0]?.id || '');
-  const [newDate, setNewDate] = useState('2026-09-30');
+  const [newDate, setNewDate] = useState(todayStr);
   const [newStartTime, setNewStartTime] = useState('09:00');
   const [newDuration, setNewDuration] = useState(60);
   const [newServiceType, setNewServiceType] = useState('Révision générale & Vidange');
@@ -114,6 +116,14 @@ export const CalendarTab: React.FC = () => {
     } else {
       setCurrentMonth(currentMonth + 1);
     }
+  };
+
+  const handleGoToday = () => {
+    const now = new Date();
+    const nowStr = getTodayDateStr();
+    setCurrentYear(now.getFullYear());
+    setCurrentMonth(now.getMonth());
+    setSelectedDayDate(nowStr);
   };
 
   // Helper to format date string YYYY-MM-DD
@@ -164,13 +174,15 @@ export const CalendarTab: React.FC = () => {
     const prefix = type === 'devis' ? 'DEV' : 'FAC';
     const year = new Date().getFullYear();
     const ref = `${prefix}-${year}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const today = getTodayDateStr();
+    const nextMonth = addDays(today, 30);
 
     const newDoc = addDocument({
       type,
       referenceNumber: ref,
-      date: apt.date,
-      validityDate: type === 'devis' ? '2026-10-30' : undefined,
-      dueDate: type === 'facture' ? '2026-10-30' : undefined,
+      date: today,
+      validityDate: type === 'devis' ? nextMonth : undefined,
+      dueDate: type === 'facture' ? nextMonth : undefined,
       clientId: apt.clientId,
       vehicleId: apt.vehicleId,
       status: type === 'devis' ? 'envoye' : 'brouillon',
@@ -307,6 +319,14 @@ export const CalendarTab: React.FC = () => {
               title="Mois suivant"
             >
               <ChevronRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={handleGoToday}
+              className="px-2 py-0.5 ml-1 bg-white hover:bg-emerald-50 text-emerald-700 font-bold rounded border border-slate-200 hover:border-emerald-300 transition-colors shadow-2xs"
+              title="Afficher le mois et la date d'aujourd'hui"
+            >
+              Aujourd'hui
             </button>
           </div>
 
@@ -468,7 +488,7 @@ export const CalendarTab: React.FC = () => {
               const dayNum = idx + 1;
               const dateStr = formatDayDate(dayNum);
               const dayApts = getAppointmentsForDay(dateStr);
-              const isToday = dateStr === '2026-09-30';
+              const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDayDate;
 
               return (
@@ -625,7 +645,7 @@ export const CalendarTab: React.FC = () => {
                   const dayNum = idx + 1;
                   const dateStr = formatDayDate(dayNum);
                   const dayApts = getAppointmentsForDay(dateStr);
-                  const isToday = dateStr === '2026-09-30';
+                  const isToday = dateStr === todayStr;
 
                   return (
                     <tr

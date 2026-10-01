@@ -104,7 +104,7 @@ export const Header: React.FC = () => {
 
         <span className="text-slate-300 hidden md:inline">·</span>
         <span className="text-xs text-slate-500 font-medium hidden md:inline capitalize">
-          {formatDateFull('2026-09-30')}
+          {formatDateFull(new Date())}
         </span>
       </div>
 

@@ -320,12 +320,15 @@ const INITIAL_SUPPLIER_ORDERS: SupplierOrder[] = [
   },
 ];
 
+const TODAY_DOC_DATE = getTodayDateStr();
+const TODAY_DOC_DUE = addDays(TODAY_DOC_DATE, 30);
+
 const INITIAL_APPOINTMENTS: Appointment[] = [
   {
     id: 'apt-1',
     clientId: 'cli-1',
     vehicleId: 'veh-1',
-    date: '2026-09-30',
+    date: TODAY_DOC_DATE,
     startTime: '08:30',
     durationMinutes: 120,
     serviceType: 'Freinage & Disques + Vidange Moteur',
@@ -339,7 +342,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-2',
     clientId: 'cli-3',
     vehicleId: 'veh-3',
-    date: '2026-09-30',
+    date: TODAY_DOC_DATE,
     startTime: '10:45',
     durationMinutes: 90,
     serviceType: 'Entretien Annuel & Recharge Climatisation R134a',
@@ -353,7 +356,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-3',
     clientId: 'cli-4',
     vehicleId: 'veh-4',
-    date: '2026-09-30',
+    date: TODAY_DOC_DATE,
     startTime: '14:00',
     durationMinutes: 180,
     serviceType: 'Géométrie 4 Roues + 2 Pneus Arrière',
@@ -367,7 +370,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-4',
     clientId: 'cli-2',
     vehicleId: 'veh-2',
-    date: '2026-10-01',
+    date: addDays(TODAY_DOC_DATE, 1),
     startTime: '09:00',
     durationMinutes: 240,
     serviceType: 'Kit de Distribution & Pompe à Eau',
@@ -381,7 +384,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-5',
     clientId: 'cli-1',
     vehicleId: 'veh-1',
-    date: '2026-09-24',
+    date: addDays(TODAY_DOC_DATE, -2),
     startTime: '14:30',
     durationMinutes: 60,
     serviceType: 'Pré-contrôle technique & Diagnostic Valise',
@@ -395,7 +398,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-6',
     clientId: 'cli-3',
     vehicleId: 'veh-3',
-    date: '2026-09-12',
+    date: addDays(TODAY_DOC_DATE, -6),
     startTime: '09:15',
     durationMinutes: 60,
     serviceType: 'Vidange huile moteur & remplacement filtre habitacle',
@@ -408,7 +411,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-7',
     clientId: 'cli-4',
     vehicleId: 'veh-4',
-    date: '2026-09-18',
+    date: addDays(TODAY_DOC_DATE, -4),
     startTime: '11:00',
     durationMinutes: 90,
     serviceType: 'Purge freinage haute pression & liquide DOT4',
@@ -421,7 +424,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-8',
     clientId: 'cli-2',
     vehicleId: 'veh-5',
-    date: '2026-10-05',
+    date: addDays(TODAY_DOC_DATE, 3),
     startTime: '13:30',
     durationMinutes: 120,
     serviceType: 'Amortisseurs avant & coupelles de suspension',
@@ -434,7 +437,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-9',
     clientId: 'cli-1',
     vehicleId: 'veh-1',
-    date: '2026-10-12',
+    date: addDays(TODAY_DOC_DATE, 7),
     startTime: '10:00',
     durationMinutes: 60,
     serviceType: 'Contrôle antipollution & décalaminage moteur hydrogène',
@@ -447,7 +450,7 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'apt-10',
     clientId: 'cli-3',
     vehicleId: 'veh-3',
-    date: '2026-10-18',
+    date: addDays(TODAY_DOC_DATE, 12),
     startTime: '15:00',
     durationMinutes: 45,
     serviceType: 'Permutation pneus hiver & équilibrage roues',
@@ -470,9 +473,6 @@ export const INITIAL_WORKSHOP_BAYS: WorkshopBay[] = [
   { id: 'bay-3', name: 'Baie Diagnostic', description: 'Diagnostic OBD & Électronique', defaultMechanic: 'Julien', color: '#8b5cf6', active: true },
   { id: 'bay-4', name: 'Atelier Général', description: 'Entretien rapide & Préparation', defaultMechanic: 'Fabrice', color: '#10b981', active: true },
 ];
-
-const TODAY_DOC_DATE = getTodayDateStr();
-const TODAY_DOC_DUE = addDays(TODAY_DOC_DATE, 30);
 
 const INITIAL_DOCUMENTS: GarageDocument[] = [
   {
@@ -743,7 +743,7 @@ const INITIAL_DOCUMENTS: GarageDocument[] = [
 const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
   {
     id: 'csh-1',
-    date: '2026-09-30T08:00:00Z',
+    date: `${TODAY_DOC_DATE}T08:00:00Z`,
     type: 'apport_caisse',
     label: 'Fond de caisse initial ouverture du jour',
     amount: 250.0,
@@ -752,7 +752,7 @@ const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
   },
   {
     id: 'csh-2',
-    date: '2026-09-30T08:45:00Z',
+    date: `${TODAY_DOC_DATE}T08:45:00Z`,
     type: 'vente_directe',
     label: 'Vente directe : Bidon Huile 5L 5W30 C3 + Entonnoir',
     amount: 48.0,
@@ -764,7 +764,7 @@ const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
   },
   {
     id: 'csh-3',
-    date: '2026-09-30T09:15:00Z',
+    date: `${TODAY_DOC_DATE}T09:15:00Z`,
     type: 'encaissement_facture',
     label: 'Acompte Bon de commande BC-2026-0034 (Freins Dubois)',
     amount: 100.0,
@@ -777,7 +777,7 @@ const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
   },
   {
     id: 'csh-4',
-    date: '2026-09-30T10:10:00Z',
+    date: `${TODAY_DOC_DATE}T10:10:00Z`,
     type: 'encaissement_facture',
     label: 'Règlement Facture FAC-2026-0089',
     amount: 117.5,
@@ -788,7 +788,7 @@ const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
   },
   {
     id: 'csh-5',
-    date: '2026-09-30T11:30:00Z',
+    date: `${TODAY_DOC_DATE}T11:30:00Z`,
     type: 'vente_directe',
     label: 'Vente directe : Lot ampoules H7 Philips + Lave-glace hiver',
     amount: 24.5,
@@ -798,7 +798,7 @@ const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
   },
   {
     id: 'csh-6',
-    date: '2026-09-30T12:00:00Z',
+    date: `${TODAY_DOC_DATE}T12:00:00Z`,
     type: 'retrait_caisse',
     label: 'Dépannage visserie inox quincaillerie locale',
     amount: 16.5,
@@ -810,7 +810,7 @@ const INITIAL_CASH_TRANSACTIONS: CashTransaction[] = [
 const INITIAL_DAY_CLOSES: CashDayClose[] = [
   {
     id: 'close-1',
-    date: '2026-09-29',
+    date: addDays(TODAY_DOC_DATE, -1),
     openingBalance: 250.0,
     totalCash: 184.0,
     totalCard: 489.5,
@@ -821,7 +821,7 @@ const INITIAL_DAY_CLOSES: CashDayClose[] = [
     actualCashCounted: 434.0,
     discrepancy: 0,
     closedBy: 'Fabrice (Gérant)',
-    closedAt: '2026-09-29T18:45:00Z',
+    closedAt: `${addDays(TODAY_DOC_DATE, -1)}T18:45:00Z`,
     notes: 'Caisse exacte, aucun écart.',
   },
 ];
@@ -1024,15 +1024,25 @@ export const storageService = {
     loadItem<Appointment[]>(KEYS.APPOINTMENTS, INITIAL_APPOINTMENTS),
   saveAppointments: (apts: Appointment[]) => saveItem(KEYS.APPOINTMENTS, apts),
 
-  getDocuments: (): GarageDocument[] =>
-    loadItem<GarageDocument[]>(KEYS.DOCUMENTS, INITIAL_DOCUMENTS),
+  getDocuments: (): GarageDocument[] => {
+    const raw = loadItem<GarageDocument[]>(KEYS.DOCUMENTS, INITIAL_DOCUMENTS);
+    const today = getTodayDateStr();
+    const nextMonth = addDays(today, 30);
+    // Mettre la date du jour sur tous les documents à l'ouverture de l'application
+    return raw.map((doc) => ({
+      ...doc,
+      date: today,
+      validityDate: doc.type === 'devis' ? nextMonth : doc.validityDate ? nextMonth : undefined,
+      dueDate: doc.type === 'facture' ? nextMonth : doc.dueDate ? nextMonth : undefined,
+    }));
+  },
   saveDocuments: (docs: GarageDocument[]) => saveItem(KEYS.DOCUMENTS, docs),
 
   setAllDocumentsToToday: (targetDate?: string): GarageDocument[] => {
     const today = targetDate || getTodayDateStr();
     const nextMonth = addDays(today, 30);
-    const docs = storageService.getDocuments();
-    const updated = docs.map((doc) => ({
+    const raw = loadItem<GarageDocument[]>(KEYS.DOCUMENTS, INITIAL_DOCUMENTS);
+    const updated = raw.map((doc) => ({
       ...doc,
       date: today,
       validityDate: doc.type === 'devis' ? nextMonth : doc.validityDate ? nextMonth : undefined,

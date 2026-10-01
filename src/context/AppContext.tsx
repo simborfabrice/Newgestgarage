@@ -18,7 +18,7 @@ import {
   DataRepairReport,
 } from '../types';
 import { storageService, recalculateDocumentTotals } from '../services/storage';
-import { getTodayDateStr } from '../utils/dateUtils';
+import { getTodayDateStr, addDays } from '../utils/dateUtils';
 
 interface AppContextType {
   // Theme & Garage
@@ -170,6 +170,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     root.style.setProperty('--table-header-bg', theme.tableHeaderBgColor || '#f1f5f9');
     root.style.setProperty('--document-color', theme.documentHeaderColor || '#0f172a');
   }, [theme]);
+
+  // Synchroniser automatiquement tous les documents avec la date du jour à l'ouverture de l'application
+  useEffect(() => {
+    const today = getTodayDateStr();
+    const updated = storageService.setAllDocumentsToToday(today);
+    setDocuments(updated);
+  }, []);
 
   const updateTheme = (newTheme: Partial<ThemeConfig>) => {
     setTheme((prev) => {
@@ -430,7 +437,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `doc-${Date.now()}`,
       type: 'bon_commande',
       referenceNumber: ref,
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayDateStr(),
       status: 'valide',
       relatedQuoteId: quote.id,
       notes: `Établi suite au devis ${quote.referenceNumber}. Travaux approuvés par le client.`,
@@ -453,17 +460,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const count = documents.filter((d) => d.type === 'facture').length + 1;
     const year = new Date().getFullYear();
     const ref = `FAC-${year}-${String(count).padStart(4, '0')}`;
-
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30);
+    const today = getTodayDateStr();
 
     const newInvoice: GarageDocument = {
       ...order,
       id: `doc-${Date.now()}`,
       type: 'facture',
       referenceNumber: ref,
-      date: new Date().toISOString().split('T')[0],
-      dueDate: dueDate.toISOString().split('T')[0],
+      date: today,
+      dueDate: addDays(today, 30),
       status: order.amountPaid >= order.totalTTC ? 'paye' : order.amountPaid > 0 ? 'partiellement_paye' : 'envoye',
       relatedOrderId: order.id,
       notes: `Facturation finale relative au bon de commande ${order.referenceNumber}. Travaux réalisés avec succès.`,
@@ -538,7 +543,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const clearDayTransactions = (preserveOpeningBalance: boolean = true) => {
-    const today = '2026-09-30';
+    const today = getTodayDateStr();
     let updated: CashTransaction[];
     if (preserveOpeningBalance) {
       const openingTx = cashTransactions.find(

@@ -16,7 +16,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { Supplier, SupplierOrder, SupplierOrderItem } from '../../types';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate, getTodayDateStr } from '../../utils/dateUtils';
 
 export const SuppliersTab: React.FC = () => {
   const {
@@ -50,7 +50,7 @@ export const SuppliersTab: React.FC = () => {
   // Supplier Order Form
   const [orderSupplierId, setOrderSupplierId] = useState(suppliers[0]?.id || '');
   const [orderNumber, setOrderNumber] = useState('');
-  const [orderDate, setOrderDate] = useState('2026-09-30');
+  const [orderDate, setOrderDate] = useState(getTodayDateStr());
   const [orderNotes, setOrderNotes] = useState('');
   const [orderItems, setOrderItems] = useState<Omit<SupplierOrderItem, 'id'>[]>([
     { reference: '', description: '', quantity: 1, unitCostHT: 0, tvaRate: 20 },
